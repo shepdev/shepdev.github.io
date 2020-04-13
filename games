@@ -1,0 +1,16 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>The HTML5 Herald</title>
+  <meta name="games" content="lots of games">
+  <meta name="shepdev" content="too many games!">
+
+</head>
+
+<body>
+  <script src="js/scripts.js"></script>
+</body>
+</html>
