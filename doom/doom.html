@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+      // Set up canvas
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("3d");
+
+      // Set up texture files
+      const dirtTexture = new Image();
+      dirtTexture.src = "textures/dirt.png";
+      const gun1Texture = new Image();
+      gun1Texture.src = "textures/gun1.png";
+      const gun2Texture = new Image();
+      gun2Texture.src = "textures/gun2.png";
+      const gun3Texture = new Image();
+      gun3Texture.src = "textures/gun3.png";
+      const enemyTexture = new Image();
+      enemyTexture.src = "textures/enemy.png";
+
+      // Set up player character
+      const player = {
+        x: 0,
+        y: 0,
+        width: 32,
+        height: 32,
+        speed: 5,
+        tilt: 0,
+        gun: gun1Texture,
+      };
+
+      // Set up enemies
+      const enemies = [];
+      const enemySpeed = 2;
+      const enemyWidth = 32;
+      const enemyHeight = 32;
+
+      // Set up maze
+      const maze = generateMaze(32, 32); // Replace this with your own maze generation function
+      const mazeWidth = maze[0].length;
+      const mazeHeight = maze.length;
+
+      // Set up shots
+      const shots = [];
+      const shotSpeed = 10;
+      const shotWidth = 5;
+      const shotHeight = 5;
+
+      // Set up game loop
+      function gameLoop() {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Update player position based on tilt
+        const nextX = player.x + player.tilt * player.speed;
+        if (nextX > 0 && nextX + player.width < mazeWidth && !maze[player.y][nextX]) {
+          player.x = nextX;
+        }
+        const nextY = player.y + player.tilt * player.speed;
+        if (nextY > 0 && nextY + player.height < mazeHeight && !maze[nextY][player.x]) {
+          player.y = nextY;
+        }
+
+        // Draw player character
+        ctx.drawImage(player.gun, player.x, player.y, player.width, player.height);
+
+        // Update enemies
+        for (let i = 0; i < enemies.length; i++) {
+          // Move enemies towards player
+          const enemy = enemies[i];
+          enemy.x += (player.x - enemy.x) * enemySpeed;
+          enemy.y += (player.y - enemy.y) * enemySpeed;
+
+          // Draw enemies
+          ctx.drawImage(enemyTexture, enemy.x, enemy.y, enemyWidth, enemyHeight);
+        }
+
+        // Update and draw shots
+        for (let i = 0; i < shots.length; i++) {
+          // Move shots
+          const shot = shots[i];
+          shot.x += shotSpeed;
+
+          // Draw shots
+          ctx.fillStyle = "white";
+          ctx.fillRect(shot.x, shot.y, shotWidth, shotHeight);
+        }
+
+        // Draw dirt texture on ground and walls
+        ctx.drawImage(dirtTexture, 0, 0, canvas.width, canvas.height);
+
+        // Request next frame
+        requestAnimationFrame(gameLoop);
+      }
+
+      // Start game loop
+      gameLoop();
+
+      // Handle key inputs to tilt player character and shoot
+      document.addEventListener("keydown", function(event) {
+        if (event.key == "ArrowLeft") {
+          player.tilt = -1;
+        } else if (event.key == "ArrowRight") {
+          player.tilt = 1;
+        } else if (event.key == " ") {
+          shots.push({
+            x: player.x + player.width,
+            y: player.y + player.height / 2 - shotHeight / 2,
+          });
+        }
+      });
+      document.addEventListener("keyup", function(event) {
+        if (event.key == "ArrowLeft" || event.key == "ArrowRight") {
+          player.tilt = 0;
+        }
+      });
+    </script>
+  </body>
+</html>
+
