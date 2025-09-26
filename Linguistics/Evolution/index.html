@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IPA Language Evolution Simulator</title>
+<style>
+  body { font-family: sans-serif; margin: 20px; }
+  textarea { width: 100%; height: 100px; margin-bottom: 10px; }
+  input[type=number] { width: 60px; }
+  #output { margin-top: 10px; white-space: pre-wrap; border: 1px solid #ccc; padding: 10px; min-height: 50px; }
+  #ipaChart { margin-top: 20px; border: 1px solid #ccc; padding: 10px; max-height: 200px; overflow-y: scroll; }
+</style>
+</head>
+<body>
+
+<h2>IPA Language Evolution Simulator</h2>
+
+<textarea id="inputWords" placeholder="Enter words, space or line-separated"></textarea>
+<br>
+
+<label>Load JSON rules: </label>
+<input type="file" id="jsonFile" multiple>
+<br>
+
+<label for="vowelDeviation">Vowel Deviation:</label>
+<input type="number" id="vowelDeviation" value="0" min="0" max="5">
+<br>
+<label for="consonantDeviation">Consonant Deviation:</label>
+<input type="number" id="consonantDeviation" value="0" min="0" max="5">
+<br>
+<label><input type="checkbox" id="randomDeviation"> Random deviation</label>
+<br>
+
+<button onclick="evolveWords()">Evolve Words</button>
+
+<div id="output"></div>
+
+<h3>IPA Chart (placeholder)</h3>
+<div id="ipaChart">
+  <p>IPA chart will display here with deviation highlighting. Currently placeholder.</p>
+</div>
+
+<script>
+// --- Default mutation rules ---
+let mutationRules = {
+  vowels: { a: "a", e: "e", i: "i", o: "o", u: "u" },
+  consonants: { p:"p", t:"t", k:"k", b:"b", d:"d", g:"g", f:"f", s:"s", m:"m", n:"n", l:"l", r:"r" }
+};
+
+// Load JSON file(s)
+document.getElementById("jsonFile").addEventListener("change", function(e){
+  const files = e.target.files;
+  for(let f=0; f<files.length; f++){
+    const reader = new FileReader();
+    reader.onload = function(event){
+      try {
+        const json = JSON.parse(event.target.result);
+        mutationRules = json;
+        console.log("Loaded rules:", mutationRules);
+      } catch(err){
+        alert("Error parsing JSON: "+err);
+      }
+    }
+    reader.readAsText(files[f]);
+  }
+});
+
+function evolveWords(){
+  const input = document.getElementById("inputWords").value;
+  const vDev = parseInt(document.getElementById("vowelDeviation").value);
+  const cDev = parseInt(document.getElementById("consonantDeviation").value);
+  const randomize = document.getElementById("randomDeviation").checked;
+
+  const words = input.split(/\s+/).filter(w=>w.length>0);
+  const evolved = words.map(word => applyEvolution(word, vDev, cDev, randomize));
+
+  document.getElementById("output").innerText = evolved.join(' ');
+
+  updateIPAChart(vDev, cDev);
+}
+
+function applyEvolution(word, vDev, cDev, randomize){
+  let w = word.split('').map(c => mutatePhoneme(c, vDev, cDev, randomize)).join('');
+  return w;
+}
+
+function mutatePhoneme(char, vDev, cDev, randomize){
+  if(mutationRules.vowels[char]){
+    let v = mutationRules.vowels[char];
+    if(vDev>0){
+      // simple deterministic shift along vowels
+      const vowelsList = Object.keys(mutationRules.vowels);
+      let idx = vowelsList.indexOf(v);
+      if(randomize){
+        idx = Math.floor(Math.random()*vowelsList.length);
+      } else {
+        idx = (idx + vDev) % vowelsList.length;
+      }
+      v = vowelsList[idx];
+      // circumflex for lengthened vowel
+      v += '̂';
+    }
+    return v;
+  }
+  if(mutationRules.consonants[char]){
+    let c = mutationRules.consonants[char];
+    const consList = Object.keys(mutationRules.consonants);
+    let idx = consList.indexOf(c);
+    if(randomize){
+      idx = Math.floor(Math.random()*consList.length);
+    } else {
+      idx = (idx + cDev) % consList.length;
+    }
+    c = consList[idx];
+    return c;
+  }
+  return char;
+}
+
+function updateIPAChart(vDev, cDev){
+  const chartDiv = document.getElementById("ipaChart");
+  chartDiv.innerHTML = "<p>Vowel deviation: "+vDev+" | Consonant deviation: "+cDev+"</p>";
+  chartDiv.innerHTML += "<p>Vowels: "+Object.keys(mutationRules.vowels).join(' ')+"</p>";
+  chartDiv.innerHTML += "<p>Consonants: "+Object.keys(mutationRules.consonants).join(' ')+"</p>";
+  chartDiv.innerHTML += "<p>Placeholder for visualized deviations.</p>";
+}
+
+</script>
+
+</body>
+</html>
